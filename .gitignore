@@ -2,3 +2,7 @@ node_modules
 npm-debug.log
 .DS_Store
 package-lock.json
+lib/cjs
+lib/esm
+test/xxy007.png.enc
+test/xxy007.dec.png

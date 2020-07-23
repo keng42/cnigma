@@ -1,54 +1,30 @@
 module.exports = {
-  extends: ['plugin:prettier/recommended', 'airbnb-base', 'prettier'],
-  plugins: ['import', 'prettier'],
-  globals: {
-    isArray: true,
-    isBoolean: true,
-    isNumber: true,
-    isObject: true,
-    isString: true,
-    isDate: true,
-    BN: true,
-    KK: true,
-    FF: true,
-    UU: true,
-    TG: true,
-    funs: true,
-    ravenCE: true,
+  root: true,
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    tsconfigRootDir: __dirname,
+    project: ['./tsconfig.json'],
   },
-  env: {
-    node: true,
-    mocha: true,
-    browser: true,
-  },
+  ignorePatterns: ['*.txt', '/lib', '/test/lib'],
+  include: ['src', 'test'],
+  plugins: ['@typescript-eslint'],
+  overrides: [
+    {
+      files: ['*.js', '*.mjs'],
+      rules: {
+        '@typescript-eslint/explicit-function-return-type': 'off',
+      },
+    },
+  ],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
+  ],
   rules: {
-    'prettier/prettier': [
-      'error',
-      {
-        singleQuote: true,
-        trailingComma: 'es5',
-      },
-    ],
-    'import/no-unresolved': [
-      2,
-      {
-        commonjs: false,
-        amd: true,
-      },
-    ],
-    'no-console': 0,
-    'no-param-reassign': [
-      'error',
-      {
-        props: false,
-      },
-    ],
-    'no-underscore-dangle': [
-      'error',
-      {
-        allow: ['_id'],
-      },
-    ],
-    'no-await-in-loop': 0, // 这个规则只是为了避免并行写成顺序执行的错误，用不上了
+    '@typescript-eslint/camelcase': 'off',
+    '@typescript-eslint/class-name-casing': 'off',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
   },
 };

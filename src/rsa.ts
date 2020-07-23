@@ -1,17 +1,30 @@
 /**
- * RSA 加密解密签名验证算法
+ * RSA encrypt/decrypt/sign/verfiy
+ *
+ * created by keng42 @2020-07-23 09:56:20
  */
-const crypto = require('crypto');
 
-class RSA {
-  constructor(opts) {
-    this.privateKeyBuf = opts.privateKey;
-    this.publicKeyBuf = opts.publicKey;
-    this.encoding = opts.encoding || 'hex';
-    this.algo = opts.algo || 'RSA-SHA256';
+import * as crypto from 'crypto';
+
+export class Rsa {
+  privateKeyBuf: Buffer;
+  publicKeyBuf: Buffer;
+  encoding: 'hex' | 'base64';
+  algo: string;
+
+  constructor(
+    privateKey: string,
+    publicKey: string,
+    encoding: 'hex' | 'base64' = 'hex',
+    algo: 'RSA-SHA256' | 'RSA-SHA512' = 'RSA-SHA256'
+  ) {
+    this.privateKeyBuf = Buffer.from(privateKey);
+    this.publicKeyBuf = Buffer.from(publicKey);
+    this.encoding = encoding;
+    this.algo = algo;
   }
 
-  sign(plain, key = this.privateKeyBuf, encoding = this.encoding) {
+  sign(plain: string, key = this.privateKeyBuf, encoding = this.encoding) {
     const signer = crypto.createSign(this.algo);
     signer.update(plain);
     const sig = signer.sign(
@@ -25,7 +38,12 @@ class RSA {
     return sig;
   }
 
-  verify(plain, sig, key = this.publicKeyBuf, encoding = this.encoding) {
+  verify(
+    plain: string,
+    sig: string,
+    key = this.publicKeyBuf,
+    encoding = this.encoding
+  ) {
     const verifyer = crypto.createVerify(this.algo);
     verifyer.update(plain);
     return verifyer.verify(
@@ -35,7 +53,7 @@ class RSA {
     );
   }
 
-  encrypt(plain, key = this.publicKeyBuf, encoding = this.encoding) {
+  encrypt(plain: string, key = this.publicKeyBuf, encoding = this.encoding) {
     const cipher = crypto
       .publicEncrypt(
         {
@@ -48,7 +66,7 @@ class RSA {
     return cipher;
   }
 
-  decrypt(cipher, key = this.privateKeyBuf, encoding = this.encoding) {
+  decrypt(cipher: string, key = this.privateKeyBuf, encoding = this.encoding) {
     const plain = crypto
       .privateDecrypt(
         {
@@ -61,5 +79,3 @@ class RSA {
     return plain;
   }
 }
-
-module.exports = RSA;

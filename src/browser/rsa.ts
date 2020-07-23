@@ -1,16 +1,25 @@
 /**
- * RSA 加密解密签名验证算法
+ * RSA encrypt/decrypt/sign/verfiy
+ *
+ * created by keng42 @2020-07-23 10:21:04
  */
+
 import {
   arrayBufferToHex,
   hexToArrayBuffer,
   base64ToArrayBuffer,
   arrayBufferToBase64,
-} from './buffer-browser';
+} from './buffer';
 
 const { crypto } = window;
 
-function cleanRsaKey(key) {
+function cleanRsaKey(key: string) {
+  if (key.includes('-----BEGIN RSA PRIVATE KEY-----')) {
+    throw new Error(
+      'WebCryptoApi does not support PKCS#1 keys, so you need to convert the key from PKCS#1 to PKCS#8.'
+    );
+  }
+
   return key
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
@@ -21,19 +30,32 @@ function cleanRsaKey(key) {
     .trim();
 }
 
-class Rsa {
-  constructor(opts) {
-    this.privateKeyBuf = base64ToArrayBuffer(cleanRsaKey(opts.privateKey));
-    this.publicKeyBuf = base64ToArrayBuffer(cleanRsaKey(opts.publicKey));
-    this.encoding = opts.encoding || 'hex';
-    this.isBase64 = this.encoding === 'base64';
-    this.algo = opts.algo || 'RSA-SHA256';
+export class Rsa {
+  privateKeyBuf: ArrayBufferLike;
+  publicKeyBuf: ArrayBufferLike;
+  encoding: 'hex' | 'base64';
+  algo: string;
+
+  constructor(
+    privateKey: string,
+    publicKey: string,
+    encoding: 'hex' | 'base64' = 'hex',
+    algo: 'RSA-SHA256' | 'RSA-SHA512' = 'RSA-SHA256'
+  ) {
+    this.privateKeyBuf = base64ToArrayBuffer(cleanRsaKey(privateKey));
+    this.publicKeyBuf = base64ToArrayBuffer(cleanRsaKey(publicKey));
+    this.encoding = encoding;
+    this.algo = algo;
   }
 
-  async sign(plain, keyBuf = this.privateKeyBuf) {
+  async sign(
+    plain: string,
+    key = this.privateKeyBuf,
+    encoding = this.encoding
+  ) {
     const privateKey = await crypto.subtle.importKey(
       'pkcs8',
-      keyBuf,
+      key,
       {
         name: 'RSA-PSS',
         hash: { name: 'SHA-256' },
@@ -54,16 +76,21 @@ class Rsa {
     );
     const resultBuf = new Uint8Array(signature);
 
-    if (this.isBase64) {
+    if (encoding === 'base64') {
       return arrayBufferToBase64(resultBuf);
     }
     return arrayBufferToHex(resultBuf);
   }
 
-  async verify(plain, sig, keyBuf = this.publicKeyBuf) {
+  async verify(
+    plain: string,
+    sig: string,
+    key = this.publicKeyBuf,
+    encoding = this.encoding
+  ) {
     const publicKey = await crypto.subtle.importKey(
       'spki',
-      keyBuf,
+      key,
       {
         name: 'RSA-PSS',
         hash: { name: 'SHA-256' },
@@ -73,8 +100,8 @@ class Rsa {
     );
 
     const data = new TextEncoder().encode(plain);
-    let signature;
-    if (this.isBase64) {
+    let signature: ArrayBufferLike;
+    if (encoding === 'base64') {
       signature = base64ToArrayBuffer(sig);
     } else {
       signature = hexToArrayBuffer(sig);
@@ -93,10 +120,14 @@ class Rsa {
     return isValid;
   }
 
-  async encrypt(plain, keyBuf = this.publicKeyBuf) {
+  async encrypt(
+    plain: string,
+    key = this.publicKeyBuf,
+    encoding = this.encoding
+  ) {
     const publicKey = await crypto.subtle.importKey(
       'spki',
-      keyBuf,
+      key,
       {
         name: 'RSA-OAEP',
         hash: { name: 'SHA-1' },
@@ -116,16 +147,20 @@ class Rsa {
     );
     const resultBuf = new Uint8Array(encrypted);
 
-    if (this.isBase64) {
+    if (encoding === 'base64') {
       return arrayBufferToBase64(resultBuf);
     }
     return arrayBufferToHex(resultBuf);
   }
 
-  async decrypt(cipher, keyBuf = this.privateKeyBuf) {
+  async decrypt(
+    cipher: string,
+    key = this.privateKeyBuf,
+    encoding = this.encoding
+  ) {
     const privateKey = await crypto.subtle.importKey(
       'pkcs8',
-      keyBuf,
+      key,
       {
         name: 'RSA-OAEP',
         hash: { name: 'SHA-1' },
@@ -134,8 +169,8 @@ class Rsa {
       ['decrypt']
     );
 
-    let data;
-    if (this.isBase64) {
+    let data: ArrayBufferLike;
+    if (encoding === 'base64') {
       data = base64ToArrayBuffer(cipher);
     } else {
       data = hexToArrayBuffer(cipher);
@@ -155,5 +190,3 @@ class Rsa {
     return plaintext;
   }
 }
-
-export default Rsa;
