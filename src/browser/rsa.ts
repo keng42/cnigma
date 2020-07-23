@@ -1,16 +1,19 @@
 /**
- * RSA 加密解密签名验证算法
+ * RSA encrypt/decrypt/sign/verfiy
+ *
+ * created by keng42 @2020-07-23 10:21:04
  */
+
 import {
   arrayBufferToHex,
   hexToArrayBuffer,
   base64ToArrayBuffer,
   arrayBufferToBase64,
-} from './buffer-browser';
+} from './buffer';
 
 const { crypto } = window;
 
-function cleanRsaKey(key) {
+function cleanRsaKey(key: string) {
   return key
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
@@ -21,16 +24,27 @@ function cleanRsaKey(key) {
     .trim();
 }
 
-class Rsa {
-  constructor(opts) {
-    this.privateKeyBuf = base64ToArrayBuffer(cleanRsaKey(opts.privateKey));
-    this.publicKeyBuf = base64ToArrayBuffer(cleanRsaKey(opts.publicKey));
-    this.encoding = opts.encoding || 'hex';
+export class Rsa {
+  privateKeyBuf: ArrayBufferLike;
+  publicKeyBuf: ArrayBufferLike;
+  encoding: 'hex' | 'base64';
+  algo: string;
+  isBase64: boolean;
+
+  constructor(
+    privateKey: string,
+    publicKey: string,
+    encoding: 'hex' | 'base64' = 'hex',
+    algo: 'RSA-SHA256' | 'RSA-SHA512' = 'RSA-SHA256'
+  ) {
+    this.privateKeyBuf = base64ToArrayBuffer(cleanRsaKey(privateKey));
+    this.publicKeyBuf = base64ToArrayBuffer(cleanRsaKey(publicKey));
+    this.encoding = encoding;
+    this.algo = algo;
     this.isBase64 = this.encoding === 'base64';
-    this.algo = opts.algo || 'RSA-SHA256';
   }
 
-  async sign(plain, keyBuf = this.privateKeyBuf) {
+  async sign(plain: string, keyBuf = this.privateKeyBuf) {
     const privateKey = await crypto.subtle.importKey(
       'pkcs8',
       keyBuf,
@@ -60,7 +74,7 @@ class Rsa {
     return arrayBufferToHex(resultBuf);
   }
 
-  async verify(plain, sig, keyBuf = this.publicKeyBuf) {
+  async verify(plain: string, sig: string, keyBuf = this.publicKeyBuf) {
     const publicKey = await crypto.subtle.importKey(
       'spki',
       keyBuf,
@@ -73,7 +87,7 @@ class Rsa {
     );
 
     const data = new TextEncoder().encode(plain);
-    let signature;
+    let signature: ArrayBufferLike;
     if (this.isBase64) {
       signature = base64ToArrayBuffer(sig);
     } else {
@@ -93,7 +107,7 @@ class Rsa {
     return isValid;
   }
 
-  async encrypt(plain, keyBuf = this.publicKeyBuf) {
+  async encrypt(plain: string, keyBuf = this.publicKeyBuf) {
     const publicKey = await crypto.subtle.importKey(
       'spki',
       keyBuf,
@@ -122,7 +136,7 @@ class Rsa {
     return arrayBufferToHex(resultBuf);
   }
 
-  async decrypt(cipher, keyBuf = this.privateKeyBuf) {
+  async decrypt(cipher: string, keyBuf = this.privateKeyBuf) {
     const privateKey = await crypto.subtle.importKey(
       'pkcs8',
       keyBuf,
@@ -134,7 +148,7 @@ class Rsa {
       ['decrypt']
     );
 
-    let data;
+    let data: ArrayBufferLike;
     if (this.isBase64) {
       data = base64ToArrayBuffer(cipher);
     } else {
@@ -155,5 +169,3 @@ class Rsa {
     return plaintext;
   }
 }
-
-export default Rsa;

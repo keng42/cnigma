@@ -1,4 +1,4 @@
-export function stringToArrayBuffer(str) {
+export function stringToArrayBuffer(str: string): ArrayBufferLike {
   const string = btoa(unescape(encodeURIComponent(str)));
 
   const charList = string.split('');
@@ -10,27 +10,27 @@ export function stringToArrayBuffer(str) {
   return new Uint8Array(buffer);
 }
 
-export function arrayBufferToString(buffer) {
+export function arrayBufferToString(buffer: number[]): string {
   const encodedString = String.fromCharCode.apply(null, buffer);
 
   const decodedString = decodeURIComponent(escape(atob(encodedString)));
   return decodedString;
 }
 
-export function arrayBufferToHex(buffer) {
+export function arrayBufferToHex(buffer: Uint8Array): string {
   return Array.prototype.map
-    .call(new Uint8Array(buffer), x => `00${x.toString(16)}`.slice(-2))
+    .call(new Uint8Array(buffer), (x) => `00${x.toString(16)}`.slice(-2))
     .join('');
 }
 
-export function hexToArrayBuffer(hex) {
+export function hexToArrayBuffer(hex: string): ArrayBufferLike {
   const typedArray = new Uint8Array(
-    hex.match(/[\da-f]{2}/gi).map(h => parseInt(h, 16))
+    (hex.match(/[\da-f]{2}/gi) || []).map((h) => parseInt(h, 16))
   );
   return typedArray.buffer;
 }
 
-export function base64ToArrayBuffer(base64) {
+export function base64ToArrayBuffer(base64: string): ArrayBufferLike {
   const binaryString = window.atob(base64);
   const len = binaryString.length;
   const bytes = new Uint8Array(len);
@@ -40,7 +40,7 @@ export function base64ToArrayBuffer(base64) {
   return bytes.buffer;
 }
 
-export function arrayBufferToBase64(buffer) {
+export function arrayBufferToBase64(buffer: Uint8Array): string {
   let binary = '';
   const bytes = new Uint8Array(buffer);
   const len = bytes.byteLength;
@@ -50,14 +50,17 @@ export function arrayBufferToBase64(buffer) {
   return window.btoa(binary);
 }
 
-export function concatArrayBuffer(Con, ...arrays) {
+export function concatArrayBuffer<T extends Uint8Array>(
+  c: { new (len: number): T },
+  ...arrays: T[]
+) {
   let totalLength = 0;
-  arrays.forEach(arr => {
+  arrays.forEach((arr) => {
     totalLength += arr.length;
   });
-  const result = new Con(totalLength);
+  const result: T = new c(totalLength);
   let offset = 0;
-  arrays.forEach(arr => {
+  arrays.forEach((arr) => {
     result.set(arr, offset);
     offset += arr.length;
   });
