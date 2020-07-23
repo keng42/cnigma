@@ -29,12 +29,11 @@ declare module "rsa" {
         publicKeyBuf: ArrayBufferLike;
         encoding: 'hex' | 'base64';
         algo: string;
-        isBase64: boolean;
         constructor(privateKey: string, publicKey: string, encoding?: 'hex' | 'base64', algo?: 'RSA-SHA256' | 'RSA-SHA512');
-        sign(plain: string, keyBuf?: ArrayBufferLike): Promise<string>;
-        verify(plain: string, sig: string, keyBuf?: ArrayBufferLike): Promise<boolean>;
-        encrypt(plain: string, keyBuf?: ArrayBufferLike): Promise<string>;
-        decrypt(cipher: string, keyBuf?: ArrayBufferLike): Promise<string>;
+        sign(plain: string, key?: ArrayBufferLike, encoding?: "base64" | "hex"): Promise<string>;
+        verify(plain: string, sig: string, key?: ArrayBufferLike, encoding?: "base64" | "hex"): Promise<boolean>;
+        encrypt(plain: string, key?: ArrayBufferLike, encoding?: "base64" | "hex"): Promise<string>;
+        decrypt(cipher: string, key?: ArrayBufferLike, encoding?: "base64" | "hex"): Promise<string>;
     }
 }
 declare module "cnigma" {

@@ -14,6 +14,12 @@ import {
 const { crypto } = window;
 
 function cleanRsaKey(key: string) {
+  if (key.includes('-----BEGIN RSA PRIVATE KEY-----')) {
+    throw new Error(
+      'WebCryptoApi does not support PKCS#1 keys, so you need to convert the key from PKCS#1 to PKCS#8.'
+    );
+  }
+
   return key
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
@@ -29,7 +35,6 @@ export class Rsa {
   publicKeyBuf: ArrayBufferLike;
   encoding: 'hex' | 'base64';
   algo: string;
-  isBase64: boolean;
 
   constructor(
     privateKey: string,
@@ -41,13 +46,16 @@ export class Rsa {
     this.publicKeyBuf = base64ToArrayBuffer(cleanRsaKey(publicKey));
     this.encoding = encoding;
     this.algo = algo;
-    this.isBase64 = this.encoding === 'base64';
   }
 
-  async sign(plain: string, keyBuf = this.privateKeyBuf) {
+  async sign(
+    plain: string,
+    key = this.privateKeyBuf,
+    encoding = this.encoding
+  ) {
     const privateKey = await crypto.subtle.importKey(
       'pkcs8',
-      keyBuf,
+      key,
       {
         name: 'RSA-PSS',
         hash: { name: 'SHA-256' },
@@ -68,16 +76,21 @@ export class Rsa {
     );
     const resultBuf = new Uint8Array(signature);
 
-    if (this.isBase64) {
+    if (encoding === 'base64') {
       return arrayBufferToBase64(resultBuf);
     }
     return arrayBufferToHex(resultBuf);
   }
 
-  async verify(plain: string, sig: string, keyBuf = this.publicKeyBuf) {
+  async verify(
+    plain: string,
+    sig: string,
+    key = this.publicKeyBuf,
+    encoding = this.encoding
+  ) {
     const publicKey = await crypto.subtle.importKey(
       'spki',
-      keyBuf,
+      key,
       {
         name: 'RSA-PSS',
         hash: { name: 'SHA-256' },
@@ -88,7 +101,7 @@ export class Rsa {
 
     const data = new TextEncoder().encode(plain);
     let signature: ArrayBufferLike;
-    if (this.isBase64) {
+    if (encoding === 'base64') {
       signature = base64ToArrayBuffer(sig);
     } else {
       signature = hexToArrayBuffer(sig);
@@ -107,10 +120,14 @@ export class Rsa {
     return isValid;
   }
 
-  async encrypt(plain: string, keyBuf = this.publicKeyBuf) {
+  async encrypt(
+    plain: string,
+    key = this.publicKeyBuf,
+    encoding = this.encoding
+  ) {
     const publicKey = await crypto.subtle.importKey(
       'spki',
-      keyBuf,
+      key,
       {
         name: 'RSA-OAEP',
         hash: { name: 'SHA-1' },
@@ -130,16 +147,20 @@ export class Rsa {
     );
     const resultBuf = new Uint8Array(encrypted);
 
-    if (this.isBase64) {
+    if (encoding === 'base64') {
       return arrayBufferToBase64(resultBuf);
     }
     return arrayBufferToHex(resultBuf);
   }
 
-  async decrypt(cipher: string, keyBuf = this.privateKeyBuf) {
+  async decrypt(
+    cipher: string,
+    key = this.privateKeyBuf,
+    encoding = this.encoding
+  ) {
     const privateKey = await crypto.subtle.importKey(
       'pkcs8',
-      keyBuf,
+      key,
       {
         name: 'RSA-OAEP',
         hash: { name: 'SHA-1' },
@@ -149,7 +170,7 @@ export class Rsa {
     );
 
     let data: ArrayBufferLike;
-    if (this.isBase64) {
+    if (encoding === 'base64') {
       data = base64ToArrayBuffer(cipher);
     } else {
       data = hexToArrayBuffer(cipher);
